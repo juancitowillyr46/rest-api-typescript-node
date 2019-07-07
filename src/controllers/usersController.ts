@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import UserModel, { User } from "../models/User";
 import Joi from "@hapi/joi";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import config from "../config/app";
 
 class UsersController {
   public async postUsers(req: Request, res: Response) {
@@ -69,11 +71,21 @@ class UsersController {
 
     if (!validPass) return res.status(400).send("Invalid password");
 
-    return res.status(200).send(req.body);
+    console.log(config.getJwtTokenSecret());
+
+    const token = jwt.sign({ _id: user._id }, config.getJwtTokenSecret());
+
+    return res.header("auth-token", token).send(token);
+
+    //return res.status(200).send(req.body);
   }
 
-  public getUsers(req: Request, res: Response) {
-    return res.send("Hola mundo getUsers");
+  public async getUsers(req: Request, res: Response) {
+    const user = await UserModel.findOne({ email: req.body.email });
+
+    if (!user) return res.status(204).send("Not Result");
+
+    return res.send(user);
   }
 
   public deleteUsers(req: Request, res: Response) {
